@@ -1,0 +1,178 @@
+// ============================================================
+// Driver Pulse — Prisma Schema
+// PostgreSQL + Prisma ORM
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// DRIVER — Core user model with credentials and vehicle info
+// ============================================================
+model Driver {
+  id            String   @id @default(uuid())
+  driverId      String   @unique // e.g. DRV20250001
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  name          String
+  phone         String
+  vehicleNumber String
+  vehicleType   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  trips       Trip[]
+  flags       Flag[]
+  insights    AIInsight[]
+  chatHistory ChatHistory[]
+
+  @@map("drivers")
+}
+
+// ============================================================
+// TRIP — Individual driving sessions
+// ============================================================
+model Trip {
+  id        String     @id @default(uuid())
+  driverId  String
+  startTime DateTime
+  endTime   DateTime?
+  distance  Float?     // in km
+  earnings  Float?     // in USD
+  avgSpeed  Float?     // in km/h
+  route     String?    // e.g. "Downtown -> Airport"
+  status    TripStatus @default(IN_PROGRESS)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  flags  Flag[]
+
+  @@index([driverId])
+  @@map("trips")
+}
+
+// ============================================================
+// FLAG — Safety events detected during a trip
+// ============================================================
+model Flag {
+  id            String        @id @default(uuid())
+  tripId        String
+  driverId      String
+  flagType      String        // e.g. "hard_braking", "speeding", "phone_usage"
+  severity      FlagSeverity
+  latitude      Float?
+  longitude     Float?
+  motionScore   Float?
+  audioScore    Float?
+  combinedScore Float?
+  timestamp     DateTime
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([tripId])
+  @@map("flags")
+}
+
+// ============================================================
+// AI INSIGHT — Per-driver AI-generated safety summary
+// ============================================================
+model AIInsight {
+  id             String   @id @default(uuid())
+  driverId       String
+  summary        String   @db.Text
+  recommendation String   @db.Text
+  riskScore      Float    // 0-100
+  createdAt      DateTime @default(now())
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@map("ai_insights")
+}
+
+// ============================================================
+// CHAT HISTORY — Driver Q&A conversation log
+// ============================================================
+model ChatHistory {
+  id        String   @id @default(uuid())
+  driverId  String
+  question  String   @db.Text
+  response  String   @db.Text
+  createdAt DateTime @default(now())
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@map("chat_history")
+}
+
+// ============================================================
+// DRIVER PREDICTION — Stored ML predictions for drivers
+// ============================================================
+model DriverPrediction {
+  id          String   @id @default(uuid())
+  driverId    String
+  riskLabel   String
+  confidence  Float
+  safetyScore Float
+  source      String   @default("unknown") // "dataset" | "assessment_form" | "db_assessment"
+  createdAt   DateTime @default(now())
+
+  @@index([driverId])
+  @@map("driver_predictions")
+}
+
+// ============================================================
+// DRIVER ASSESSMENT — Raw feature data from assessment form
+// One per driver — upserted on re-submission
+// ============================================================
+model DriverAssessment {
+  id                   String   @id @default(uuid())
+  driverId             String   @unique  // one assessment per driver
+  city                 String
+  shiftPreference      String
+  avgHoursPerDay       Float
+  avgEarningsPerHour   Float
+  experienceMonths     Int
+  rating               Float
+  dailyProductivity    Float
+  avgCombinedScore     Float
+  avgMotionScore       Float
+  avgAudioScore        Float
+  totalFlags           Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("driver_assessments")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+enum TripStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}

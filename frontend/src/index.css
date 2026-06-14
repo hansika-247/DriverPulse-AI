@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--color-primary-theme);
+  --color-success: var(--color-success-theme);
+  --color-warning: var(--color-warning-theme);
+  --color-danger: var(--color-danger-theme);
+  --color-bgDark: var(--color-bgDark-theme);
+  --color-cardDark: var(--color-cardDark-theme);
+  --color-textLight: var(--color-textLight-theme);
+}
+
+:root {
+  --color-primary-theme: #2563EB;
+  --color-success-theme: #22C55E;
+  --color-warning-theme: #F59E0B;
+  --color-danger-theme: #EF4444;
+  --color-bgDark-theme: #0F172A;
+  --color-cardDark-theme: #1E293B;
+  --color-textLight-theme: #F8FAFC;
+}
+
+/* Light theme (Uber Driver Dashboard inspired theme) overrides */
+html.light, body.light {
+  --color-primary-theme: #000000;
+  --color-success-theme: #06C167; /* Uber accent green */
+  --color-bgDark-theme: #F8FAFC;
+  --color-cardDark-theme: #FFFFFF;
+  --color-textLight-theme: #0F172A;
+}
+
+/* Dark theme overrides (same as default/root) */
+html.dark, body.dark {
+  --color-primary-theme: #2563EB;
+  --color-success-theme: #22C55E;
+  --color-warning-theme: #F59E0B;
+  --color-danger-theme: #EF4444;
+  --color-bgDark-theme: #0F172A;
+  --color-cardDark-theme: #1E293B;
+  --color-textLight-theme: #F8FAFC;
+}
+
+@layer base {
+  body {
+    @apply bg-bgDark text-textLight antialiased;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-cardDark/80 backdrop-blur-md border border-white/10;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%) }
+  100% { transform: translateX(-100%) }
+}
+
+.animate-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 12s linear infinite;
+}
+
+/* CSS border/background overrides for light mode */
+.light .border-white\/10 {
+  border-color: #E5E7EB !important;
+}
+.light .border-white\/5 {
+  border-color: #E5E7EB !important;
+}
+.light .border-t-white\/10 {
+  border-top-color: #E5E7EB !important;
+}
+.light .border-t-white\/5 {
+  border-top-color: #E5E7EB !important;
+}
+.light .border-b-white\/10 {
+  border-bottom-color: #E5E7EB !important;
+}
+.light .border-b-white\/5 {
+  border-bottom-color: #E5E7EB !important;
+}
+.light .border-r-white\/10 {
+  border-right-color: #E5E7EB !important;
+}
+.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.light input::placeholder {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+.light input:disabled {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
