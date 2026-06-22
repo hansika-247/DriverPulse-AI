@@ -1,22 +1,17 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
+import { normalizeDriverId } from '../utils/driverId.js';
 
 // ─────────────────────────────────────────────────────────────
-// Helper: generate unique Driver ID  →  DRV20250001
+// Helper: generate unique Driver ID  →  DRV0001, DRV0002, …
+// Format matches the ML training dataset so FastAPI can resolve
+// the driver directly from the CSV (Case 1 prediction path).
 // ─────────────────────────────────────────────────────────────
 const generateDriverId = async () => {
-  const year = new Date().getFullYear();
-  const prefix = `DRV${year}`;
-
-  // Count existing drivers whose driverId starts with this year's prefix
-  const count = await prisma.driver.count({
-    where: { driverId: { startsWith: prefix } },
-  });
-
-  // Zero-pad to 4 digits → DRV20250001
+  const count = await prisma.driver.count();
   const sequence = String(count + 1).padStart(4, '0');
-  return `${prefix}${sequence}`;
+  return `DRV${sequence}`;  // DRV0001, DRV0002, … matches model_loader.py format
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -68,7 +63,10 @@ export const signup = async ({ name, email, phone, username, password, vehicleNu
   const passwordHash = await bcrypt.hash(password, saltRounds);
 
   // Use supplied ID if provided; otherwise auto-generate as fallback
-  const driverId = suppliedId ? suppliedId.trim().toUpperCase() : await generateDriverId();
+  // Always normalize to DRV0001 format before storing
+  const driverId = suppliedId
+    ? normalizeDriverId(suppliedId.trim().toUpperCase())
+    : await generateDriverId();
 
   const driver = await prisma.driver.create({
     data: { driverId, username, email, passwordHash, name, phone, vehicleNumber, vehicleType },
@@ -82,8 +80,10 @@ export const signup = async ({ name, email, phone, username, password, vehicleNu
 // LOGIN  (identifier = username OR driverId)
 // ─────────────────────────────────────────────────────────────
 export const login = async ({ identifier, password }) => {
+  // Normalize identifier if it looks like a Driver ID (DRV*) so DRV001 matches DRV0001 in DB
+  const normalizedIdentifier = normalizeDriverId(identifier);
   const driver = await prisma.driver.findFirst({
-    where: { OR: [{ username: identifier }, { driverId: identifier }] },
+    where: { OR: [{ username: identifier }, { driverId: normalizedIdentifier }] },
   });
 
   if (!driver) {

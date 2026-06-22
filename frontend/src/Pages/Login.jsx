@@ -5,6 +5,7 @@ import { Eye, EyeOff, LogIn, Gauge, AlertCircle } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
 import { apiLogin } from '../api';
+import { normalizeDriverId } from '../utils/driverId';
 
 const Login = () => {
   const { theme } = useTheme();
@@ -34,8 +35,10 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await apiLogin(form);
-      login(data.token, data.driver);
+      // { success, message, data: { driver, token } }
+      const payload = { ...form, identifier: normalizeDriverId(form.identifier) };
+      const res = await apiLogin(payload);
+      login(res.data.token, res.data.driver);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
@@ -144,7 +147,7 @@ const Login = () => {
                 name="identifier"
                 value={form.identifier}
                 onChange={handleChange}
-                placeholder="e.g. alex_j or DRV20250001"
+                placeholder="e.g. alex_j or DRV0001"
                 autoComplete="username"
                 className={inputClass}
               />

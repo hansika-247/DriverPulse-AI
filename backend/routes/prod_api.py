@@ -6,6 +6,7 @@ from services.model_loader import get_store
 from services.predictor import predict_driver
 from services.analytics import compute_leaderboard, generate_insights
 from routes.drivers import list_drivers, driver_profile
+from utils.driver_id import normalize_driver_id
 
 router = APIRouter(prefix="/api", tags=["Production API"])
 
@@ -124,7 +125,7 @@ def get_api_driver_by_id(driver_id: str):
     }
     ```
     """
-    return driver_profile(driver_id)
+    return driver_profile(normalize_driver_id(driver_id))
 
 
 # ── Prediction ────────────────────────────────────────────────────────────────
@@ -165,8 +166,10 @@ def predict_risk_api(req: PredictRequest):
     ```
     """
     try:
+        # Normalize BEFORE lookup so DRV001 == DRV0001
+        driver_id = normalize_driver_id(req.driver_id)
         # predict_driver() now returns a dict in all cases — no ValueError raised
-        result = predict_driver(req.driver_id)
+        result = predict_driver(driver_id)
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {exc}")
@@ -193,8 +196,8 @@ class NewDriverFeatures(BaseModel):
 )
 def predict_new_driver_api(req: NewDriverFeatures):
     from services.predictor import predict_new_driver_features
-    features = req.dict()
-    driver_id = features.pop("driver_id")
+    features  = req.dict()
+    driver_id = normalize_driver_id(features.pop("driver_id"))
     try:
         prediction = predict_new_driver_features(driver_id, features)
         return {"data": prediction}
@@ -249,7 +252,7 @@ def driver_assessment_api(req: NewDriverFeatures):
     """
     from services.predictor import predict_new_driver_features
     features  = req.dict()
-    driver_id = features.pop("driver_id")
+    driver_id = normalize_driver_id(features.pop("driver_id"))
     try:
         prediction = predict_new_driver_features(driver_id, features)
         return {"success": True, "data": prediction}
@@ -258,6 +261,7 @@ def driver_assessment_api(req: NewDriverFeatures):
 
 class AiInsightsRequest(BaseModel):
     driver_id: Optional[str] = None
+    language: Optional[str] = 'en'
 
 @router.post(
     "/ai-insights",
@@ -284,5 +288,6 @@ def ai_insights_api(req: Optional[AiInsightsRequest] = None):
     ```
     """
     driver_id = req.driver_id if req else None
-    items = generate_insights(driver_id)
+    lang = req.language if req and req.language else 'en'
+    items = generate_insights(driver_id, lang)
     return {"count": len(items), "insights": items}

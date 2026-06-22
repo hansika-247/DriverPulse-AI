@@ -1,22 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Bell, Palette, Shield, ChevronRight, Check } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
+import { apiGetDriverProfile, apiUpdateProfile } from '../api';
+import { useLanguage } from '../LanguageContext';
+import { useAuth } from '../AuthContext';
+import LanguageSelector from '../Components/LanguageSelector';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
+  const { driver } = useAuth();
 
-  const handleSave = (e) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    driverId: ''
+  });
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await apiGetDriverProfile(driver?.driverId || 'DRV0001');
+        setFormData({
+          name: data?.name || driver?.name || '',
+          email: data?.email || driver?.email || '',
+          phone: data?.phone || driver?.phone || '',
+          driverId: data?.driver_id || driver?.driverId || ''
+        });
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+        // Fallback to auth driver data if ML profile fetch fails
+        setFormData({
+          name: driver?.name || '',
+          email: driver?.email || '',
+          phone: driver?.phone || '',
+          driverId: driver?.driverId || ''
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (driver) {
+      fetchProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [driver]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert('Changes saved successfully!');
+    setIsSaving(true);
+    try {
+      await apiUpdateProfile({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone
+      });
+      alert('Changes saved successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save changes.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const navItems = [
-    { id: 'profile', name: 'Profile', icon: User },
-    { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'appearance', name: 'Appearance', icon: Palette },
-    { id: 'security', name: 'Security', icon: Shield },
+    { id: 'profile', name: t('Profile'), icon: User },
+    { id: 'notifications', name: t('Notifications'), icon: Bell },
+    { id: 'appearance', name: t('Appearance'), icon: Palette },
+    { id: 'security', name: t('Security'), icon: Shield },
   ];
 
   return (
@@ -26,7 +88,7 @@ const Settings = () => {
         animate={{ opacity: 1, x: 0 }}
         className="text-3xl font-bold"
       >
-        Settings
+        {t('Settings')}
       </motion.h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -76,12 +138,14 @@ const Settings = () => {
                 
                 <form onSubmit={handleSave} className="space-y-6">
                   <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-400 p-1">
-                      <img src="https://i.pravatar.cc/150?u=alex" alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-cardDark" />
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-400 p-1 flex items-center justify-center overflow-hidden">
+                      <div className="w-full h-full rounded-full bg-cardDark flex items-center justify-center text-2xl font-bold text-white uppercase">
+                        {formData.name ? formData.name.charAt(0) : 'U'}
+                      </div>
                     </div>
                     <div>
                       <button type="button" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm font-medium transition-colors mb-2">
-                        Change Photo
+                        {t('Change Photo')}
                       </button>
                       <p className="text-xs text-textLight/50">JPG, GIF or PNG. Max size 2MB.</p>
                     </div>
@@ -89,29 +153,56 @@ const Settings = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-sm text-textLight/70">Full Name</label>
-                      <input type="text" defaultValue="Alex Johnson" className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" />
+                      <label className="text-sm text-textLight/70">{t('Full Name')}</label>
+                      <input 
+                        type="text" 
+                        name="name"
+                        value={formData.name} 
+                        onChange={handleChange}
+                        className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" 
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm text-textLight/70">Driver ID</label>
-                      <input type="text" defaultValue="DP-847291" disabled className="w-full bg-bgDark/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-textLight/50 cursor-not-allowed" />
+                      <label className="text-sm text-textLight/70">{t('Driver ID')}</label>
+                      <input 
+                        type="text" 
+                        value={formData.driverId} 
+                        disabled 
+                        className="w-full bg-bgDark/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-textLight/50 cursor-not-allowed" 
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm text-textLight/70">Email Address</label>
-                      <input type="email" defaultValue="alex.johnson@driverpulse.com" className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" />
+                      <label className="text-sm text-textLight/70">{t('Email Address')}</label>
+                      <input 
+                        type="email" 
+                        name="email"
+                        value={formData.email} 
+                        onChange={handleChange}
+                        className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" 
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm text-textLight/70">Phone Number</label>
-                      <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" />
+                      <label className="text-sm text-textLight/70">{t('Phone Number')}</label>
+                      <input 
+                        type="tel" 
+                        name="phone"
+                        value={formData.phone} 
+                        onChange={handleChange}
+                        className="w-full bg-bgDark border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" 
+                      />
                     </div>
                   </div>
 
                   <div className="pt-6 border-t border-white/10 flex justify-end gap-3">
                     <button type="button" className="px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/5 transition-colors">
-                      Cancel
+                      {t('Cancel')}
                     </button>
-                    <button type="submit" className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
-                      Save Changes
+                    <button 
+                      type="submit" 
+                      disabled={isSaving}
+                      className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      {isSaving ? t('Saving...') : t('Save Changes')}
                     </button>
                   </div>
                 </form>
@@ -130,6 +221,13 @@ const Settings = () => {
                 <h2 className="text-xl font-semibold mb-6 border-b border-white/10 pb-4">Appearance Settings</h2>
                 
                 <div className="space-y-6">
+                  <div className="mb-6 pb-6 border-b border-white/10">
+                    <h3 className="text-lg font-medium mb-4">{t('Language')}</h3>
+                    <div className="max-w-xs">
+                      <LanguageSelector />
+                    </div>
+                  </div>
+
                   <p className="text-sm text-textLight/70">
                     Customize your interface appearance. Choose between the classic Pulse SaaS dark mode or the light Uber Driver Dashboard design.
                   </p>

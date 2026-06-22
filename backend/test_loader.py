@@ -24,7 +24,7 @@ print("\nLoading model...")
 with open(MODEL_PATH, "rb") as f:
     bundle = pickle.load(f)
 
-print("✅ Model loaded")
+print("Model loaded")
 show_memory("AFTER MODEL")
 
 print("\nLoading encoders...")
@@ -32,7 +32,7 @@ print("\nLoading encoders...")
 with open(ENC_PATH, "rb") as f:
     encoders = pickle.load(f)
 
-print("✅ Encoders loaded")
+print("Encoders loaded")
 show_memory("AFTER ENCODERS")
 
 print("\nLoading dataset...")

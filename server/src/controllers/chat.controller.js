@@ -2,8 +2,12 @@ import * as chatService from '../services/chat.service.js';
 
 // POST /chat
 export const sendMessage = async (req, res) => {
-  const { question } = req.body;
-  const record = await chatService.chat(req.driver.id, question);
+  const { question, language } = req.body;
+
+  // req.driver.id       = internal UUID  (DB foreign key)
+  // req.driver.driverId = alphanumeric ML ID (e.g. "DRV0001") sent to FastAPI
+  const record = await chatService.chat(req.driver.id, req.driver.driverId, question, language || 'en');
+
   res.status(201).json({
     success: true,
     data: { message: record },

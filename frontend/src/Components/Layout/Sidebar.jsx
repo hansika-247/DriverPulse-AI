@@ -3,6 +3,9 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../ThemeContext';
 import { useAuth } from '../../AuthContext';
+import { useLanguage } from '../../LanguageContext';
+import LanguageSelector from '../LanguageSelector';
+import { apiTestLogin } from '../../api';
 import {
   LayoutDashboard,
   User,
@@ -36,9 +39,30 @@ const navItems = [
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { driver, logout } = useAuth();
+  const { driver, logout, login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const isDark = theme === 'dark';
+
+  const [simulatedDriver, setSimulatedDriver] = useState('');
+  const TEST_DRIVERS = ['DRV0001', 'DRV0050', 'DRV0100', 'DRV0200', 'DRV0500', 'DRV1000', 'DRV3000'];
+
+  const handleTestLogin = async (e) => {
+    const id = e.target.value;
+    setSimulatedDriver(id);
+    if (!id) return;
+    try {
+      const res = await apiTestLogin(id);
+      if (res.success) {
+        login(res.data.token, res.data.driver);
+        if (window.location.pathname !== '/') {
+          navigate('/');
+        }
+      }
+    } catch (err) {
+      console.error('Test login failed', err);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -97,6 +121,24 @@ const Sidebar = () => {
           </div>
         )}
 
+        {!isCollapsed && (
+          <div className="mb-4 px-2">
+            <label className="text-xs text-textLight/50 uppercase font-bold tracking-wider mb-2 block">
+              {t('Simulate Driver')}
+            </label>
+            <select
+              className="w-full bg-bgDark border border-white/10 rounded-lg px-3 py-2 text-sm text-textLight focus:outline-none focus:border-primary"
+              value={simulatedDriver}
+              onChange={handleTestLogin}
+            >
+              <option value="">{t('Select driver...')}</option>
+              {TEST_DRIVERS.map(id => <option key={id} value={id}>{id}</option>)}
+            </select>
+          </div>
+        )}
+
+        {!isCollapsed && <LanguageSelector />}
+
         {/* ── Navigation ── */}
         <nav className="flex-1 space-y-1 overflow-y-auto hide-scrollbar">
           {navItems.map((item) => (
@@ -113,10 +155,10 @@ const Sidebar = () => {
               `}
             >
               <item.icon size={20} className="min-w-[20px]" />
-              {!isCollapsed && <span className="ml-3 truncate text-sm">{item.name}</span>}
+              {!isCollapsed && <span className="ml-3 truncate text-sm">{t(item.name)}</span>}
               {isCollapsed && (
                 <div className="absolute left-full ml-3 px-2 py-1 bg-cardDark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
-                  {item.name}
+                  {t(item.name)}
                 </div>
               )}
             </NavLink>
@@ -134,10 +176,10 @@ const Sidebar = () => {
               ? <Sun size={20} className="min-w-[20px]" />
               : <Moon size={20} className="min-w-[20px]" />
             }
-            {!isCollapsed && <span className="ml-3 text-sm">Toggle Theme</span>}
+            {!isCollapsed && <span className="ml-3 text-sm">{t('Toggle Theme')}</span>}
             {isCollapsed && (
               <div className="absolute left-full ml-3 px-2 py-1 bg-cardDark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
-                Toggle Theme
+                {t('Toggle Theme')}
               </div>
             )}
           </button>
@@ -148,10 +190,10 @@ const Sidebar = () => {
             className="w-full flex items-center px-3 py-2.5 rounded-xl text-danger/70 hover:bg-danger/10 hover:text-danger transition-colors group relative"
           >
             <LogOut size={20} className="min-w-[20px]" />
-            {!isCollapsed && <span className="ml-3 text-sm">Logout</span>}
+            {!isCollapsed && <span className="ml-3 text-sm">{t('Logout')}</span>}
             {isCollapsed && (
               <div className="absolute left-full ml-3 px-2 py-1 bg-cardDark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
-                Logout
+                {t('Logout')}
               </div>
             )}
           </button>

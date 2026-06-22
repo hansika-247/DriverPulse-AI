@@ -33,6 +33,7 @@ model Driver {
   flags       Flag[]
   insights    AIInsight[]
   chatHistory ChatHistory[]
+  incidentFeedbacks IncidentFeedback[]
 
   @@map("drivers")
 }
@@ -47,15 +48,17 @@ model Trip {
   endTime   DateTime?
   distance  Float?     // in km
   earnings  Float?     // in USD
-  avgSpeed  Float?     // in km/h
-  route     String?    // e.g. "Downtown -> Airport"
-  status    TripStatus @default(IN_PROGRESS)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  avgSpeed         Float?     // in km/h
+  route            String?    // e.g. "Downtown -> Airport"
+  routeCoordinates Json?      // Array of [lng, lat] pairs
+  status           TripStatus @default(IN_PROGRESS)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   // Relations
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
   flags  Flag[]
+  incidentFeedbacks IncidentFeedback[]
 
   @@index([driverId])
   @@map("trips")
@@ -81,6 +84,7 @@ model Flag {
   // Relations
   trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  incidentFeedback IncidentFeedback?
 
   @@index([driverId])
   @@index([tripId])
@@ -175,4 +179,25 @@ enum FlagSeverity {
   LOW
   MEDIUM
   HIGH
+}
+
+// ============================================================
+// INCIDENT FEEDBACK — Human-in-the-loop validation
+// ============================================================
+model IncidentFeedback {
+  id           String   @id @default(uuid())
+  driverId     String
+  tripId       String
+  flagId       String   @unique
+  feedbackType String   // "CORRECT", "INCORRECT", "NOT_RELEVANT"
+  createdAt    DateTime @default(now())
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  flag   Flag   @relation(fields: [flagId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([flagId])
+  @@map("incident_feedback")
 }

@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BrainCircuit, Sparkles, TrendingUp, Lightbulb, AlertCircle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { useLanguage } from '../LanguageContext';
 import { apiPostAiInsights } from '../api';
+import VoiceReadout from '../Components/VoiceReadout';
 
 const AIInsights = () => {
   const { driver } = useAuth();
+  const { t, selectedLanguage } = useLanguage();
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const res = await apiPostAiInsights(driver?.driverId || 'DRV0001');
+        const res = await apiPostAiInsights(driver?.driverId || 'DRV0001', selectedLanguage);
         setInsights(res.insights || []);
       } catch (err) {
         console.error("Failed to load AI insights", err);
@@ -21,7 +24,7 @@ const AIInsights = () => {
       }
     };
     fetchInsights();
-  }, []);
+  }, [driver, selectedLanguage]);
 
   if (loading) {
     return <div className="p-6 text-center text-textLight animate-pulse">Generating AI Insights...</div>;
@@ -34,9 +37,9 @@ const AIInsights = () => {
         <motion.h1 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="text-3xl font-bold bg-gradient-to-r from-white to-textLight/70 bg-clip-text text-transparent"
+          className="text-3xl font-bold bg-gradient-to-r from-white to-textLight/70 bg-clip-text text-transparent flex-1"
         >
-          AI Behavioral Insights
+          {t('AI Insights')}
         </motion.h1>
       </div>
 
@@ -98,9 +101,12 @@ const AIInsights = () => {
           transition={{ delay: 0.2 }}
           className="glass p-6 rounded-2xl col-span-1 md:col-span-2"
         >
-          <div className="flex items-center gap-2 mb-6">
-            <Lightbulb className="text-success" size={20} />
-            <h2 className="text-xl font-semibold">Actionable Recommendations</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="text-success" size={20} />
+              <h2 className="text-xl font-semibold">Actionable Recommendations</h2>
+            </div>
+            {insights.length > 0 && <VoiceReadout text={insights.map(i => i.title + ". " + i.description).join(" ")} />}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

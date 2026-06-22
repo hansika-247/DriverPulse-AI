@@ -8,6 +8,7 @@ import {
 import { useTheme } from '../ThemeContext';
 import { useAuth }  from '../AuthContext';
 import { apiSignup } from '../api';
+import { normalizeDriverId } from '../utils/driverId';
 
 const VEHICLE_TYPES = ['sedan', 'suv', 'hatchback', 'truck', 'van', 'motorcycle', 'other'];
 
@@ -39,7 +40,8 @@ const Signup = () => {
     setError('');
     setFieldErrors({});
     try {
-      const { data } = await apiSignup(form);
+      const payload = { ...form, driverId: normalizeDriverId(form.driverId) };
+      const { data } = await apiSignup(payload);
       login(data.token, data.driver);
       navigate('/', { replace: true });
     } catch (err) {
@@ -112,7 +114,7 @@ const Signup = () => {
 
         <div className="relative z-10 space-y-4">
           {[
-            'Enter your own Driver ID (e.g. DRV001)',
+            'Enter your own Driver ID (e.g. DRV0001)',
             'AI-generated driving safety insights',
             'Real-time flag detection and analysis',
             'Secure JWT-protected account',
@@ -152,7 +154,7 @@ const Signup = () => {
           </h1>
           <p className={`text-sm mb-7 ${isDark ? 'text-textLight/60' : 'text-gray-500'}`}>
             Enter your Driver ID — e.g.{' '}
-            <span className="font-mono text-primary font-semibold">DRV001</span>,{' '}
+            <span className="font-mono text-primary font-semibold">DRV0001</span>,{' '}
             <span className="font-mono text-primary font-semibold">DRV20260005</span>
           </p>
 
@@ -181,7 +183,7 @@ const Signup = () => {
                 name="driverId"
                 value={form.driverId}
                 onChange={handleChange}
-                placeholder="e.g. DRV001, DRV20260005"
+                placeholder="e.g. DRV0001, DRV20260005"
                 autoComplete="off"
                 className={inputCls('driverId')}
               />

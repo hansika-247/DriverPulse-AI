@@ -8,6 +8,7 @@ GET /driver/{id}   — full driver profile
 from fastapi import APIRouter, HTTPException, Query
 from services.model_loader import get_store
 from services.predictor import predict_driver
+from utils.driver_id import normalize_driver_id
 
 router = APIRouter()
 
@@ -52,6 +53,7 @@ def list_drivers(
     response_description="Complete driver record",
 )
 def driver_profile(driver_id: str):
+    driver_id = normalize_driver_id(driver_id)  # DRV001 → DRV0001
     df = get_store()["df"]
     row = df[df["driver_id"] == driver_id]
 

@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from services.model_loader import load_all_assets, get_store
-from routes import predict, drivers, leaderboard, insights, compat, prod_api
+from routes import predict, drivers, leaderboard, insights, compat, prod_api, explain
 
 
 # ── Lifespan: load assets exactly once ───────────────────────────────────────
@@ -57,6 +57,7 @@ app.include_router(predict.router,     tags=["Prediction"])
 app.include_router(leaderboard.router, tags=["Fleet & Leaderboard"])
 app.include_router(insights.router,    tags=["AI Insights"])
 app.include_router(compat.router,      tags=["Legacy Compat"])
+app.include_router(explain.router,     tags=["Explainability"])
 app.include_router(prod_api.router)
 
 

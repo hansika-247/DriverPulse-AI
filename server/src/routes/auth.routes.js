@@ -14,4 +14,7 @@ router.post('/login', validate(loginSchema), authController.login);
 // GET /auth/me  — returns current driver from JWT
 router.get('/me', authenticate, authController.getMe);
 
+// POST /auth/test-login — Developer testing mode
+router.post('/test-login', authController.testLogin);
+
 export default router;

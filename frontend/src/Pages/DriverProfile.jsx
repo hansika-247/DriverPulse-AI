@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Phone, Mail, MapPin, Truck, ShieldCheck, Edit, BrainCircuit, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
-import { apiGetDriverProfile, apiPredictRisk } from '../api';
+import { useLanguage } from '../LanguageContext';
+import { apiGetDriverProfile, apiPredictRisk, apiGetInsights, apiGetProfile } from '../api';
 import DriverAssessmentForm from './DriverAssessmentForm';
 
 const DriverProfile = () => {
   const { driver } = useAuth();
+  const { t, selectedLanguage } = useLanguage();
   
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [predicting, setPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState(null);
+  const [insightExplanation, setInsightExplanation] = useState(null);
   const [showAssessment, setShowAssessment] = useState(false);
 
   useEffect(() => {
@@ -36,8 +39,19 @@ const DriverProfile = () => {
     }
     try {
       setPredicting(true);
-      const res = await apiPredictRisk(profile?.driver_id || driver?.driverId || 'DRV0001');
+      const driverIdToPredict = profile?.driver_id || driver?.driverId || 'DRV0001';
+      const res = await apiPredictRisk(driverIdToPredict);
       setPredictionResult(res);
+      
+      try {
+        // Fetch AI explanation
+        const insightsResponse = await apiGetInsights(driverIdToPredict, selectedLanguage);
+        const insightsArr = Array.isArray(insightsResponse?.data) ? insightsResponse.data : (Array.isArray(insightsResponse) ? insightsResponse : []);
+        const riskInsight = insightsArr.find(i => i.type === 'risk_explanation');
+        setInsightExplanation(riskInsight);
+      } catch (err) {
+        console.warn('Failed to load risk explanation insight', err);
+      }
     } catch (err) {
       console.error("Prediction failed", err);
       alert("Failed to predict risk.");
@@ -61,7 +75,7 @@ const DriverProfile = () => {
           animate={{ opacity: 1, x: 0 }}
           className="text-3xl font-bold"
         >
-          Driver Profile
+          {t('Driver Profile')}
         </motion.h1>
         <motion.button 
           initial={{ opacity: 0, scale: 0.9 }}
@@ -121,11 +135,11 @@ const DriverProfile = () => {
             
             <div className="flex items-center gap-3 text-textLight/80">
               <Phone className="text-primary" size={20} />
-              <span>{driver?.phone || '+1 (555) 123-4567'}</span>
+              <span>{profile?.phone || driver?.phone || 'Not provided'}</span>
             </div>
             <div className="flex items-center gap-3 text-textLight/80">
               <Mail className="text-primary" size={20} />
-              <span>{driver?.email || 'alex.johnson@driverpulse.com'}</span>
+              <span>{profile?.email || driver?.email || 'Not provided'}</span>
             </div>
             <div className="flex items-center gap-3 text-textLight/80">
               <MapPin className="text-primary" size={20} />
@@ -165,8 +179,14 @@ const DriverProfile = () => {
                 onAssessmentComplete={(res) => {
                   setShowAssessment(false);
                   setPredictionResult(res);
+                  // Optionally fetch explanation for new assessment
+                  apiGetInsights(driver?.driverId || 'DRV0001').then(insightsResponse => {
+                     const insightsArr = Array.isArray(insightsResponse?.data) ? insightsResponse.data : (Array.isArray(insightsResponse) ? insightsResponse : []);
+                     const riskInsight = insightsArr.find(i => i.type === 'risk_explanation');
+                     setInsightExplanation(riskInsight);
+                  }).catch(() => {});
                   // Refresh profile to remove needs_assessment
-                  apiGetDriverProfile(driver?.driverId).then(setProfile);
+                  apiGetProfile().then(setProfile).catch(() => {});
                 }} 
               />
             </div>
@@ -182,21 +202,21 @@ const DriverProfile = () => {
            >
              <h3 className="text-lg font-semibold border-b border-white/10 pb-2 mb-4">Performance Statistics</h3>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white/5 p-3 rounded-xl">
-                  <p className="text-xs text-textLight/60 mb-1">Daily Productivity</p>
+                 <div className="bg-white/5 p-3 rounded-xl">
+                  <p className="text-xs text-textLight/60 mb-1">{t('Daily Productivity')}</p>
                   <p className="text-xl font-bold text-success">₹{profile.daily_productivity}</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-xl">
-                  <p className="text-xs text-textLight/60 mb-1">Rating</p>
+                  <p className="text-xs text-textLight/60 mb-1">{t('Rating')}</p>
                   <p className="text-xl font-bold">{profile.rating} ⭐</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-xl">
-                  <p className="text-xs text-textLight/60 mb-1">Total Flags</p>
+                  <p className="text-xs text-textLight/60 mb-1">{t('Total Flags')}</p>
                   <p className="text-xl font-bold text-warning">{profile.total_flags}</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-xl">
-                  <p className="text-xs text-textLight/60 mb-1">Risk Label</p>
-                  <p className={`text-xl font-bold ${profile.risk_label === 'HIGH' ? 'text-danger' : profile.risk_label === 'MEDIUM' ? 'text-warning' : 'text-success'}`}>{profile.risk_label}</p>
+                  <p className="text-xs text-textLight/60 mb-1">{t('Risk Level')}</p>
+                  <p className={`text-xl font-bold ${profile.risk_label === 'HIGH' ? 'text-danger' : profile.risk_label === 'MEDIUM' ? 'text-warning' : 'text-success'}`}>{t(profile.risk_label)}</p>
                 </div>
              </div>
            </motion.div>
@@ -217,12 +237,24 @@ const DriverProfile = () => {
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-3 bg-white/5 p-4 rounded-xl">
                   <div className="flex justify-between items-center">
-                     <span className="text-textLight/70">Predicted Risk Level</span>
-                     <span className={`font-bold px-3 py-1 rounded-full text-sm ${predictionResult.risk_level === 'HIGH' ? 'bg-danger/20 text-danger' : predictionResult.risk_level === 'MEDIUM' ? 'bg-warning/20 text-warning' : 'bg-success/20 text-success'}`}>
-                       {predictionResult.risk_level}
+                     <span className="text-textLight/70">Final Hybrid Risk</span>
+                     <span className={`font-bold px-3 py-1 rounded-full text-sm ${predictionResult.final_hybrid_risk === 'HIGH' ? 'bg-danger/20 text-danger' : predictionResult.final_hybrid_risk === 'MEDIUM' ? 'bg-warning/20 text-warning' : 'bg-success/20 text-success'}`}>
+                       {predictionResult.final_hybrid_risk || predictionResult.risk_level}
                      </span>
                   </div>
                   <div className="flex justify-between items-center">
+                     <span className="text-textLight/70">ML Model Risk</span>
+                     <span className={`font-medium px-2 py-0.5 rounded text-xs ${predictionResult.ml_risk === 'HIGH' ? 'bg-danger/10 text-danger' : predictionResult.ml_risk === 'MEDIUM' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                       {predictionResult.ml_risk || predictionResult.risk_level}
+                     </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                     <span className="text-textLight/70">Rule-based Risk</span>
+                     <span className={`font-medium px-2 py-0.5 rounded text-xs ${predictionResult.rule_risk === 'HIGH' ? 'bg-danger/10 text-danger' : predictionResult.rule_risk === 'MEDIUM' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                       {predictionResult.rule_risk || predictionResult.risk_level}
+                     </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-white/10">
                      <span className="text-textLight/70">Confidence Score</span>
                      <span className="font-bold text-white">{(predictionResult.confidence * 100).toFixed(1)}%</span>
                   </div>
@@ -243,6 +275,23 @@ const DriverProfile = () => {
                   ))}
                 </div>
               </div>
+
+              {/* AI Explanation Block */}
+              {insightExplanation && (
+                <div className="mt-6 bg-blue-900/20 p-4 rounded-xl border border-blue-500/20">
+                  <h4 className="text-blue-400 font-semibold mb-1 flex items-center gap-2">
+                     <BrainCircuit size={16} /> {insightExplanation.title}
+                  </h4>
+                  <p className="text-sm text-textLight/90 mb-2 font-medium">{insightExplanation.summary}</p>
+                  <p className="text-sm text-textLight/70 mb-3">{insightExplanation.description}</p>
+                  <div className="bg-white/5 p-3 rounded-lg flex items-start gap-2">
+                    <AlertTriangle size={16} className={insightExplanation.severity === 'critical' ? 'text-danger mt-0.5' : insightExplanation.severity === 'warning' ? 'text-warning mt-0.5' : 'text-success mt-0.5'} />
+                    <span className="text-sm text-textLight font-medium">
+                       Recommendation: <span className="text-textLight/80 font-normal">{insightExplanation.recommendation}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 

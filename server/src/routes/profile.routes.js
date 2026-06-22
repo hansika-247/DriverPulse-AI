@@ -10,4 +10,7 @@ router.use(authenticate);
 // GET /profile
 router.get('/', profileController.getProfile);
 
+// PUT /profile
+router.put('/', profileController.updateProfile);
+
 export default router;

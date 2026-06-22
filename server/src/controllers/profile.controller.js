@@ -29,3 +29,37 @@ export const getProfile = async (req, res) => {
     data: { driver },
   });
 };
+
+// PUT /profile — updates authenticated driver's profile
+export const updateProfile = async (req, res) => {
+  const { name, email, phone } = req.body;
+  
+  try {
+    const driver = await prisma.driver.update({
+      where: { id: req.driver.id },
+      data: { 
+        ...(name !== undefined && { name }), 
+        ...(email !== undefined && { email }), 
+        ...(phone !== undefined && { phone }) 
+      },
+      select: {
+        id: true,
+        driverId: true,
+        username: true,
+        email: true,
+        name: true,
+        phone: true,
+        vehicleNumber: true,
+        vehicleType: true,
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile.' });
+  }
+};

@@ -63,10 +63,30 @@ def load_all_assets() -> None:
 
     df = pd.read_csv(csv_path)
 
-    # Add synthetic driver_id and name columns so we have proper IDs
-    df = df.reset_index(drop=True)
-    df["driver_id"] = df.index.map(lambda i: f"DRV{i+1:04d}")
-    df["name"]      = df["driver_id"].map(_generate_name)
+    # ── Driver ID resolution ──────────────────────────────────────────────────
+    # IMPORTANT: If the CSV already contains a driver_id column (which it SHOULD
+    # after running fix_dataset.py), use it directly. The IDs in the CSV are the
+    # authoritative ones that match what the Node auth server assigns to users.
+    # Only fall back to row-index generation if driver_id is completely absent.
+    if "driver_id" not in df.columns or df["driver_id"].isnull().all():
+        # Legacy fallback — CSV was generated without driver_id (the old bug).
+        # This regenerates IDs by row index which will NOT match auth IDs.
+        # Fix the dataset by running fix_dataset.py at the project root.
+        print("[model_loader] WARNING: driver_id missing from CSV — using row-index fallback.")
+        print("[model_loader] Run fix_dataset.py to regenerate the dataset correctly.")
+        df = df.reset_index(drop=True)
+        df["driver_id"] = df.index.map(lambda i: f"DRV{i+1:04d}")
+        df["name"] = df["driver_id"].map(_generate_name)
+    else:
+        # driver_id is already in the CSV — use it as-is.
+        df = df.reset_index(drop=True)
+        # Fill in name column if missing or empty
+        if "name" not in df.columns or df["name"].isnull().all():
+            df["name"] = df["driver_id"].map(_generate_name)
+        else:
+            # Fill only rows that have a null name
+            mask = df["name"].isnull() | (df["name"].astype(str).str.strip() == "")
+            df.loc[mask, "name"] = df.loc[mask, "driver_id"].map(_generate_name)
 
     _STORE["df"] = df
 

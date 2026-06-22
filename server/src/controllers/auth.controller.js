@@ -1,5 +1,6 @@
 import * as authService from '../services/auth.service.js';
 import prisma from '../config/prisma.js';
+import jwt from 'jsonwebtoken';
 
 // POST /auth/signup
 export const signup = async (req, res) => {
@@ -44,4 +45,33 @@ export const getMe = async (req, res) => {
   }
 
   res.status(200).json({ success: true, data: { driver } });
+};
+
+// POST /auth/test-login — Developer testing mode
+export const testLogin = async (req, res) => {
+  const { driverId } = req.body;
+  
+  if (!driverId) {
+    return res.status(400).json({ success: false, message: 'Driver ID required.' });
+  }
+
+  const driver = await prisma.driver.findFirst({
+    where: { driverId: driverId.toUpperCase() }
+  });
+
+  if (!driver) {
+    return res.status(404).json({ success: false, message: 'Test driver not found in database.' });
+  }
+
+  const token = jwt.sign(
+    { id: driver.id, driverId: driver.driverId },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: 'Test login successful.',
+    data: { token, driver },
+  });
 };

@@ -16,6 +16,7 @@ import flagRoutes       from './routes/flag.routes.js';
 import insightRoutes    from './routes/insight.routes.js';
 import chatRoutes       from './routes/chat.routes.js';
 import assessmentRoutes from './routes/assessment.routes.js';
+import feedbackRoutes   from './routes/feedback.routes.js';
 
 import prisma from './config/prisma.js';
 
@@ -52,6 +53,7 @@ app.use('/flags',       flagRoutes);
 app.use('/insights',    insightRoutes);
 app.use('/chat',        chatRoutes);
 app.use('/assessment',  assessmentRoutes);
+app.use('/feedback',    feedbackRoutes);
 
 // ── 404 Handler ──────────────────────────────────────────────
 app.use((req, res) => {

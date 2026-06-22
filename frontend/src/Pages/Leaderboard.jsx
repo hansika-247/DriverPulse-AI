@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Medal, Star, TrendingUp, ShieldCheck } from 'lucide-react';
 import { apiGetTopPerformers } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 const Leaderboard = () => {
+  const { t } = useLanguage();
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +36,7 @@ const Leaderboard = () => {
           animate={{ opacity: 1, x: 0 }}
           className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent"
         >
-          Top Performers
+          {t('Leaderboard')}
         </motion.h1>
       </div>
 
@@ -120,8 +122,8 @@ const Leaderboard = () => {
                   <td className="p-4 text-textLight/80">{driver.rating} <Star className="inline text-yellow-500" size={14} /></td>
                   <td className="p-4 text-success font-medium">₹{driver.daily_productivity}</td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${driver.risk_label === 'LOW' ? 'bg-success/20 text-success' : driver.risk_label === 'MEDIUM' ? 'bg-warning/20 text-warning' : 'bg-danger/20 text-danger'}`}>
-                      {driver.risk_label}
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${driver.risk_label === 'HIGH' ? 'bg-danger/20 text-danger' : driver.risk_label === 'MEDIUM' ? 'bg-warning/20 text-warning' : 'bg-success/20 text-success'}`}>
+                      {t(driver.risk_label)}
                     </span>
                   </td>
                   <td className="p-4 text-right font-mono text-primary font-bold">{driver.score.toFixed(2)}</td>

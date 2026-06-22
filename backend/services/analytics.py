@@ -9,6 +9,7 @@ from __future__ import annotations
 import pandas as pd
 from services.model_loader import get_store
 from services.predictor import predict_all, predict_driver
+from utils.driver_id import normalize_driver_id
 
 
 # ── Fleet summary ─────────────────────────────────────────────────────────────
@@ -88,57 +89,87 @@ def compute_leaderboard(top_n: int = 10) -> list[dict]:
 
 # ── AI Insights ───────────────────────────────────────────────────────────────
 
-def generate_insights(driver_id: str = None) -> list[dict]:
+def generate_insights(driver_id: str = None, language: str = 'en') -> list[dict]:
+    """
+    Generate personalized, deterministic insights for a driver.
+
+    Pulls ML prediction + CSV row fields and delegates to insights_engine.
+    Falls back to a generic fleet insight if driver_id is absent or unknown.
+    """
+    from services.insights_engine import generate_driver_insights
+
     if driver_id:
+        driver_id = normalize_driver_id(driver_id)  # DRV001 → DRV0001
         try:
             pred = predict_driver(driver_id)
-            risk = pred["risk_level"]
-            conf = pred["confidence"]
-            feats = pred["top_features"]
-            
-            insights = []
-            insights.append({
-                "type": "risk_assessment",
-                "title": "🧠 ML Risk Assessment",
-                "description": f"The AI model predicts a {risk} risk level with {conf*100:.1f}% confidence.",
-                "value": conf,
-                "summary": f"Your predicted risk level is {risk}.",
-                "recommendation": "Maintain safe driving habits to improve your score." if risk != "LOW" else "Keep up the excellent driving!"
-            })
-            
-            if feats:
-                top_f = feats[0]
-                fname = top_f["feature"].replace("_", " ").title()
-                insights.append({
-                    "type": "top_factor",
-                    "title": f"Key Factor: {fname}",
-                    "description": f"The most significant factor influencing your score is {fname} ({(top_f['importance']*100):.1f}% importance).",
-                    "value": top_f["importance"],
-                })
-                
-            if len(feats) > 1:
-                sec_f = feats[1]
-                fname2 = sec_f["feature"].replace("_", " ").title()
-                insights.append({
-                    "type": "secondary_factor",
-                    "title": f"Secondary Factor: {fname2}",
-                    "description": f"Another strong predictor for your risk profile is {fname2} ({(sec_f['importance']*100):.1f}% importance).",
-                    "value": sec_f["importance"],
-                })
-                
-            return insights
-        except Exception:
-            pass
 
-    df = predict_all()
+            # If driver needs assessment, return the pending insight
+            if pred.get("needs_assessment"):
+                return generate_driver_insights(
+                    driver_id   = driver_id,
+                    risk_level  = None,
+                    confidence  = 0.0,
+                    top_features= [],
+                )
+
+            risk  = pred["final_hybrid_risk"]
+            ml_risk = pred.get("ml_risk", risk)
+            rule_risk = pred.get("rule_risk", risk)
+            conf  = pred["confidence"]
+            feats = pred["top_features"]
+
+            # Pull raw CSV row so we have all metric fields
+            df  = get_store()["df"]
+            row = df[df["driver_id"] == driver_id]
+
+            if not row.empty:
+                r = row.iloc[0]
+                return generate_driver_insights(
+                    driver_id          = driver_id,
+                    risk_level         = risk,
+                    ml_risk            = ml_risk,
+                    rule_risk          = rule_risk,
+                    confidence         = conf,
+                    top_features       = feats,
+                    total_flags        = int(r.get("total_flags",         0)),
+                    rating             = float(r.get("rating",            4.0)),
+                    daily_productivity = float(r.get("daily_productivity",1000.0)),
+                    experience_months  = float(r.get("experience_months", 12.0)),
+                    avg_motion_score   = float(r.get("avg_motion_score",  0.75)),
+                    avg_audio_score    = float(r.get("avg_audio_score",   0.75)),
+                    avg_combined_score = float(r.get("avg_combined_score",0.75)),
+                    shift_preference   = str(r.get("shift_preference",  "Morning")),
+                    avg_hours_per_day  = float(r.get("avg_hours_per_day", 8.0)),
+                    language           = language,
+                )
+            else:
+                # Driver found in DB (CASE 2) — use prediction fields only
+                return generate_driver_insights(
+                    driver_id    = driver_id,
+                    risk_level   = risk,
+                    ml_risk      = ml_risk,
+                    rule_risk    = rule_risk,
+                    confidence   = conf,
+                    top_features = feats,
+                    language     = language,
+                )
+
+        except Exception as e:
+            print(f"[analytics] generate_insights failed for driver_id={driver_id}: {e}")
+
+    # Fleet-level fallback (no driver_id supplied)
+    df        = predict_all()
     high_risk = len(df[df["predicted_risk_label"] == "HIGH"])
-    total = len(df)
-    
+    total     = len(df)
+
     return [
         {
-            "type": "fleet_risk",
-            "title": "Fleet Risk",
+            "type":        "fleet_risk",
+            "title":       "Fleet Risk Overview",
             "description": f"AI model predicts {high_risk} HIGH risk drivers out of {total}.",
-            "value": high_risk
+            "summary":     f"{high_risk} of {total} fleet drivers are currently HIGH risk.",
+            "value":       high_risk,
+            "severity":    "warning" if high_risk > total * 0.2 else "neutral",
         }
     ]
+

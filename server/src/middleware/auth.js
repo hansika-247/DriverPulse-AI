@@ -1,9 +1,11 @@
 import jwt from 'jsonwebtoken';
+import { normalizeDriverId } from '../utils/driverId.js';
 
 /**
  * JWT Authentication Middleware
  * Protects routes by verifying Bearer tokens.
  * Attaches req.driver = { id, driverId } on success.
+ * driverId is always normalized to DRV0001 format before being attached.
  */
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -19,7 +21,12 @@ const authenticate = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.driver = decoded; // { id, driverId, username }
+    // Normalize driverId so all downstream services receive DRV0001 format
+    // regardless of how it was originally encoded in the JWT.
+    req.driver = {
+      ...decoded,
+      driverId: normalizeDriverId(decoded.driverId),
+    };
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {

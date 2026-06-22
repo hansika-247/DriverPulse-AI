@@ -53,13 +53,14 @@ const mlClient = makeClient(ML_URL);
 export const apiSignup = (body) => nodeClient.post('/auth/signup', body);
 export const apiLogin  = (body) => nodeClient.post('/auth/login',  body);
 export const apiGetMe  = ()     => nodeClient.get('/auth/me');
+export const apiTestLogin = (driverId) => nodeClient.post('/auth/test-login', { driverId });
 
 // ── Trips  (Node :5000) ──────────────────────────────────────
 export const apiGetTrips = ()   => nodeClient.get('/trips');
 export const apiGetTrip  = (id) => nodeClient.get(`/trips/${id}`);
 
 // ── Flags  (Node :5000) ──────────────────────────────────────
-export const apiGetFlags = ()   => nodeClient.get('/flags');
+export const apiGetFlags = (params) => nodeClient.get('/flags', { params });
 export const apiGetFlag  = (id) => nodeClient.get(`/flags/${id}`);
 
 // ── Insights  (Node :5000) ───────────────────────────────────
@@ -67,15 +68,21 @@ export const apiGetInsights = (driverId) =>
   nodeClient.get('/insights', { params: { driver_id: driverId } });
 
 // ── Chat  (Node :5000) ───────────────────────────────────────
-export const apiSendChat      = (question) => nodeClient.post('/chat', { question });
+export const apiSendChat      = (question, language = 'en') => nodeClient.post('/chat', { question, language });
 export const apiGetChatHistory = ()        => nodeClient.get('/chat/history');
 
 // ── Profile  (Node :5000) ────────────────────────────────────
 export const apiGetProfile = () => nodeClient.get('/profile');
+export const apiUpdateProfile = (data) => nodeClient.put('/profile', data);
 
 // ── Assessment  (Node :5000) ─────────────────────────────────
 export const apiSaveAssessment = (data) => nodeClient.post('/assessment', data);
 export const apiGetAssessment  = ()     => nodeClient.get('/assessment');
+
+// ── Feedback  (Node :5000) ───────────────────────────────────
+export const apiPostFeedback = (data) => nodeClient.post('/feedback', data);
+export const apiGetFeedbackStats = (global = true) => nodeClient.get('/feedback/stats', { params: { global } });
+export const apiGetTripFeedback = (tripId) => nodeClient.get('/feedback/trip', { params: { tripId } });
 
 // ── ML / Driver APIs  (FastAPI :8000) ────────────────────────
 export const apiGetDrivers       = (params)     => mlClient.get('/api/drivers', { params });
@@ -90,8 +97,11 @@ export const apiGetDriverProfile = (id)         => mlClient.get(`/api/drivers/${
 export const apiPredictRisk = (driverId) =>
   mlClient.post('/api/predict-risk', { driver_id: driverId });
 
-export const apiPostAiInsights = (driverId) =>
-  mlClient.post('/api/ai-insights', { driver_id: driverId });
+export const apiPostAiInsights = (driverId, language = 'en') =>
+  mlClient.post('/api/ai-insights', { driver_id: driverId, language });
+
+export const apiExplainIncident = (flag, language = 'en') =>
+  mlClient.post('/api/explain-incident', { ...flag, language });
 
 /**
  * POST /api/driver-assessment  (FastAPI — runs ML + saves prediction to DB)

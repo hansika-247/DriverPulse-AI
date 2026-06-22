@@ -2,21 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { 
   TrendingUp, Activity, DollarSign, AlertTriangle, Gauge, ShieldAlert, Sparkles, BrainCircuit
 } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
+import { useLanguage } from '../LanguageContext';
 import { apiGetTrips, apiGetFlags, apiGetInsights, apiGetDriverProfile } from '../api';
 import DriverAssessmentForm from './DriverAssessmentForm';
+import DeveloperTestMode from '../Components/DeveloperTestMode';
+import VoiceReadout from '../Components/VoiceReadout';
 
 const COLORS = ['#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#10B981'];
 
 const Dashboard = () => {
   const { theme } = useTheme();
   const { driver } = useAuth();
+  const { t, selectedLanguage } = useLanguage();
   const isDark = theme === 'dark';
 
   const [loading, setLoading] = useState(true);
@@ -48,7 +52,7 @@ const Dashboard = () => {
         const [tripsRes, flagsRes, insightsRes, profileRes] = await Promise.all([
           apiGetTrips().catch(() => ({ data: { trips: [] } })),
           apiGetFlags().catch(() => ({ data: { flags: [] } })),
-          apiGetInsights(driverId).catch(() => ({ data: { insights: [], stats: {} } })),
+          apiGetInsights(driverId, selectedLanguage).catch(() => ({ data: { insights: [], stats: {} } })),
           apiGetDriverProfile(driverId).catch(() => null),
         ]);
 
@@ -63,8 +67,6 @@ const Dashboard = () => {
         const avgSpeed = (Array.isArray(trips) && trips.length) ? trips.reduce((sum, t) => sum + Number(t.avgSpeed || 0), 0) / trips.length : 0;
         
         // ── Needs assessment check ────────────────────────────────────────────
-        // profileRes.needs_assessment can come from /api/drivers/{id} (drivers.py)
-        // profileRes.needs_assessment can also come via predict_driver() returning that flag
         if (profileRes?.needs_assessment) {
           setNeedsAssessment(true);
           setLoading(false);
@@ -85,17 +87,15 @@ const Dashboard = () => {
         }
 
         setSafetyScore(currentScore);
-        // We'll store confidence as well, or just add it to KPI directly
-        // Let's add confidence to KPI data.
 
         setKpiData([
-          { title: 'Total Trips', value: totalTrips.toString(), icon: Activity, color: 'text-primary' },
-          { title: 'Performance Score', value: profileRes ? `$${profileRes.daily_productivity}/day` : `$${totalEarnings.toFixed(2)}`, icon: DollarSign, color: 'text-success' },
-          { title: 'Safety Score', value: `${currentScore}/100`, icon: ShieldAlert, color: 'text-primary' },
-          { title: 'Flags Detected', value: totalFlags.toString(), icon: AlertTriangle, color: 'text-warning' },
-          { title: 'Rating', value: profileRes ? `${profileRes.rating} ⭐` : `${Math.round(avgSpeed)} mph`, icon: Gauge, color: 'text-textLight' },
-          { title: 'Risk Level', value: riskLevel, icon: TrendingUp, color: 'text-success' },
-          { title: 'ML Confidence', value: `${(predictionConfidence * 100).toFixed(1)}%`, icon: BrainCircuit, color: 'text-primary' },
+          { title: t('Total Trips'), value: totalTrips.toString(), icon: Activity, color: 'text-primary' },
+          { title: t('Performance Score'), value: profileRes ? `$${profileRes.daily_productivity}/day` : `$${totalEarnings.toFixed(2)}`, icon: DollarSign, color: 'text-success' },
+          { title: t('Safety Score'), value: `${currentScore}/100`, icon: ShieldAlert, color: 'text-primary' },
+          { title: t('Flags Detected'), value: totalFlags.toString(), icon: AlertTriangle, color: 'text-warning' },
+          { title: t('Rating'), value: profileRes ? `${profileRes.rating} ⭐` : `${Math.round(avgSpeed)} mph`, icon: Gauge, color: 'text-textLight' },
+          { title: t('Risk Level'), value: t(riskLevel.toUpperCase()) || riskLevel, icon: TrendingUp, color: 'text-success' },
+          { title: t('ML Confidence'), value: `${(predictionConfidence * 100).toFixed(1)}%`, icon: BrainCircuit, color: 'text-primary' },
         ]);
 
         // --- Calculate Trend Data (Last 7 Days) ---
@@ -137,15 +137,21 @@ const Dashboard = () => {
 
         // --- Flag Distribution ---
         const fDist = {};
+        let totalFlagsForDist = 0;
         if (Array.isArray(flags)) {
           flags.forEach(f => {
             if (f.flagType) {
                 const name = f.flagType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                 fDist[name] = (fDist[name] || 0) + 1;
+                totalFlagsForDist++;
             }
           });
         }
-        setFlagDistribution(Object.keys(fDist).map(k => ({ name: k, value: fDist[k] })));
+        setFlagDistribution(Object.keys(fDist).map(k => ({ 
+          name: k, 
+          value: fDist[k], 
+          percentage: totalFlagsForDist > 0 ? Math.round((fDist[k]/totalFlagsForDist)*100) : 0 
+        })));
 
         // --- Risk Radar (Mock from Flags) ---
         setRiskRadarData([
@@ -177,7 +183,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [driver, selectedLanguage]);
 
   // Dynamic Theme Colors for Charts
   const themeColors = {
@@ -189,6 +195,35 @@ const Dashboard = () => {
     tooltipBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
     tooltipText: isDark ? '#F8FAFC' : '#0F172A',
     polarGrid: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+  };
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    if (percent < 0.05) return null;
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="bold">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="glass p-3 rounded-lg border border-white/10 shadow-xl" style={{ backgroundColor: themeColors.tooltipBg }}>
+          <p className="font-bold text-sm" style={{ color: themeColors.text }}>{data.name}</p>
+          <p className="text-sm mt-1" style={{ color: themeColors.text }}>{data.value} incidents</p>
+          <p className="text-xs mt-1 font-semibold" style={{ color: themeColors.primary }}>{data.percentage}% of total</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -214,13 +249,13 @@ const Dashboard = () => {
       setSafetyScore(prediction?.predicted_safety_score || 75);
       const riskLevel = prediction?.risk_level || 'MEDIUM';
       setKpiData([
-        { title: 'Total Trips',        value: '0',            icon: Activity,    color: 'text-primary' },
-        { title: 'Performance Score',  value: '—',            icon: DollarSign,  color: 'text-success' },
-        { title: 'Safety Score',       value: `${prediction?.predicted_safety_score || 75}/100`, icon: ShieldAlert, color: 'text-primary' },
-        { title: 'Flags Detected',     value: '0',            icon: AlertTriangle, color: 'text-warning' },
-        { title: 'Rating',             value: '—',            icon: Gauge,       color: 'text-textLight' },
-        { title: 'Risk Level',         value: riskLevel,      icon: TrendingUp,  color: 'text-success' },
-        { title: 'ML Confidence',      value: `${((prediction?.confidence || 0) * 100).toFixed(1)}%`, icon: BrainCircuit, color: 'text-primary' },
+        { title: t('Total Trips'),        value: '0',            icon: Activity,    color: 'text-primary' },
+        { title: t('Performance Score'),  value: '—',            icon: DollarSign,  color: 'text-success' },
+        { title: t('Safety Score'),       value: `${prediction?.predicted_safety_score || 75}/100`, icon: ShieldAlert, color: 'text-primary' },
+        { title: t('Flags Detected'),     value: '0',            icon: AlertTriangle, color: 'text-warning' },
+        { title: t('Rating'),             value: '—',            icon: Gauge,       color: 'text-textLight' },
+        { title: t('Risk Level'),         value: t(riskLevel.toUpperCase()) || riskLevel,      icon: TrendingUp,  color: 'text-success' },
+        { title: t('ML Confidence'),      value: `${((prediction?.confidence || 0) * 100).toFixed(1)}%`, icon: BrainCircuit, color: 'text-primary' },
       ]);
       setInsightMessage(
         `Your initial risk profile has been generated. Risk level: ${riskLevel}. ` +
@@ -253,6 +288,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      <DeveloperTestMode />
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -272,7 +308,7 @@ const Dashboard = () => {
           className="flex items-center gap-4 glass px-6 py-3 rounded-2xl"
         >
           <div className="text-right">
-            <p className="text-sm text-textLight/70">Safety Score</p>
+            <p className="text-sm text-textLight/70">{t('Safety Score')}</p>
             <p className={`text-2xl font-bold ${safetyScore > 85 ? 'text-success' : safetyScore > 70 ? 'text-warning' : 'text-danger'}`}>
               {safetyScore}
             </p>
@@ -314,9 +350,12 @@ const Dashboard = () => {
           <BrainCircuit size={100} className="text-primary" />
         </div>
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="text-primary" size={24} />
-            <h2 className="text-xl font-bold">AI Safety Summary</h2>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-primary" size={24} />
+              <h2 className="text-xl font-bold">{t('AI Safety Summary')}</h2>
+            </div>
+            <VoiceReadout text={insightMessage} />
           </div>
           <p className="text-textLight/90 leading-relaxed max-w-3xl">
             {insightMessage}
@@ -331,7 +370,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Safety Score Timeline */}
         <div className="glass p-5 rounded-2xl">
-          <h3 className="text-lg font-semibold mb-4">Safety Score Trend (7 Days)</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('Safety Score Trend (7 Days)')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={safetyScoreData}>
@@ -353,7 +392,7 @@ const Dashboard = () => {
 
         {/* Trip Trend Chart */}
         <div className="glass p-5 rounded-2xl">
-          <h3 className="text-lg font-semibold mb-4">Trip Trend (Last 7 Days)</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('Trip Trend (Last 7 Days)')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tripTrendData}>
@@ -369,7 +408,7 @@ const Dashboard = () => {
 
         {/* Earnings Velocity Graph */}
         <div className="glass p-5 rounded-2xl">
-          <h3 className="text-lg font-semibold mb-4">Earnings Velocity</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('Earnings Velocity')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={earningsData}>
@@ -386,25 +425,37 @@ const Dashboard = () => {
         {/* Flag & Risk Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="glass p-5 rounded-2xl flex flex-col items-center">
-            <h3 className="text-lg font-semibold mb-2 self-start">Flag Distribution</h3>
-            <div className="h-48 w-full">
+            <h3 className="text-lg font-semibold mb-2 self-start">{t('Flag Distribution')}</h3>
+            <div className="h-64 w-full mt-4">
               {flagDistribution.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={flagDistribution}
-                      cx="50%"
+                      cx="40%"
                       cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
+                      innerRadius={45}
+                      outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
+                      label={renderCustomizedLabel}
+                      labelLine={false}
                     >
                       {flagDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: themeColors.tooltipBg, border: `1px solid ${themeColors.tooltipBorder}`, borderRadius: '8px', color: themeColors.tooltipText }} />
+                    <Tooltip content={<CustomPieTooltip />} />
+                    <Legend 
+                      layout="vertical" 
+                      verticalAlign="middle" 
+                      align="right"
+                      wrapperStyle={{ fontSize: '12px' }}
+                      formatter={(value, entry) => {
+                        const { payload } = entry;
+                        return <span style={{ color: themeColors.text }} className="ml-1">{value} ({payload?.value || 0})</span>;
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
@@ -416,8 +467,8 @@ const Dashboard = () => {
           </div>
           
           <div className="glass p-5 rounded-2xl flex flex-col items-center">
-            <h3 className="text-lg font-semibold mb-2 self-start">Risk Radar</h3>
-            <div className="h-48 w-full">
+            <h3 className="text-lg font-semibold mb-2 self-start">{t('Risk Radar')}</h3>
+            <div className="h-64 w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={riskRadarData}>
                   <PolarGrid stroke={themeColors.polarGrid} />
