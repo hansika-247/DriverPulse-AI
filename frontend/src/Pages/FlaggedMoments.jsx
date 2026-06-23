@@ -96,30 +96,30 @@ const FlaggedMoments = () => {
         animate={{ opacity: 1, y: 0 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        <div className="glass p-5 rounded-2xl flex items-center justify-between col-span-1 md:col-span-2 lg:col-span-1 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
+        <div className="glass-panel p-6 rounded-2xl flex items-center justify-between col-span-1 md:col-span-2 lg:col-span-1 bg-gradient-to-br from-primary/20 to-black/40 border border-primary/30 shadow-[0_8px_30px_rgba(37,99,235,0.2)]">
           <div>
-            <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-1">Total Incidents</p>
-            <p className="text-5xl font-bold text-white">{totalIncidents}</p>
+            <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Total Incidents</p>
+            <p className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{totalIncidents}</p>
           </div>
-          <div className="w-14 h-14 rounded-full bg-primary/20 text-primary flex items-center justify-center">
-            <AlertTriangle size={28} />
+          <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center border border-primary/50 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+            <AlertTriangle size={32} />
           </div>
         </div>
 
         <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
           {typeStats.length === 0 ? (
-            <div className="col-span-full glass p-4 rounded-xl text-textLight/50 flex items-center justify-center">
+            <div className="col-span-full glass-panel p-4 rounded-xl text-textLight/50 flex items-center justify-center">
               No incident types found.
             </div>
           ) : typeStats.map(stat => (
-            <div key={stat.type} className="glass p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
-              <p className="text-sm font-semibold text-textLight line-clamp-1">{stat.type}</p>
+            <div key={stat.type} className="glass-panel p-4 rounded-xl border border-white/10 hover:border-white/30 transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between">
+              <p className="text-xs uppercase tracking-wider font-bold text-textLight/80 line-clamp-1">{stat.type}</p>
               <div className="mt-2 flex items-end justify-between">
-                <span className="text-2xl font-bold">{stat.count}</span>
+                <span className="text-2xl font-bold tracking-tight">{stat.count}</span>
                 <span className="text-xs text-textLight/50 mb-1">{stat.percentage}%</span>
               </div>
-              <div className="w-full bg-bgDark h-1.5 rounded-full mt-3 overflow-hidden">
-                <div className="bg-warning h-full rounded-full" style={{ width: `${stat.percentage}%` }}></div>
+              <div className="w-full bg-black/50 h-1.5 rounded-full mt-3 overflow-hidden border border-white/5">
+                <div className="bg-warning h-full rounded-full shadow-[0_0_10px_#F59E0B]" style={{ width: `${stat.percentage}%` }}></div>
               </div>
             </div>
           ))}
@@ -168,7 +168,9 @@ const FlaggedMoments = () => {
         ) : filteredFlags.map((flag, index) => {
           const isHigh = flag.severity?.toUpperCase() === 'HIGH';
           const isMedium = flag.severity?.toUpperCase() === 'MEDIUM';
-          const badgeClass = isHigh ? 'bg-danger/10 text-danger border-danger/20' : isMedium ? 'bg-warning/10 text-warning border-warning/20' : 'bg-success/10 text-success border-success/20';
+          const badgeClass = isHigh ? 'bg-danger/10 text-danger border-danger/30' : isMedium ? 'bg-warning/10 text-warning border-warning/30' : 'bg-success/10 text-success border-success/30';
+          const glowColor = isHigh ? 'rgba(239, 68, 68, 0.4)' : isMedium ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+          const hoverClass = isHigh ? 'hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] hover:border-danger/50' : isMedium ? 'hover:shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:border-warning/50' : 'hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-success/50';
           
           return (
             <motion.div
@@ -176,7 +178,7 @@ const FlaggedMoments = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: (index % 10) * 0.05 }}
-              className="glass p-5 rounded-2xl flex flex-col hover:border-white/20 hover:bg-white/[0.03] transition-all group"
+              className={`glass-panel p-6 rounded-2xl flex flex-col border border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 group ${hoverClass}`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">

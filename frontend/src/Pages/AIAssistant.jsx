@@ -18,8 +18,23 @@ const SUGGESTED_PROMPTS = [
 ];
 
 // ── Message bubble renderer ─────────────────────────────────────────────────
-function MessageBubble({ msg }) {
+function MessageBubble({ msg, isNewAI }) {
   const isUser = msg.sender === 'user';
+  const [displayedText, setDisplayedText] = useState(isNewAI ? '' : msg.text);
+
+  useEffect(() => {
+    if (!isNewAI) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(msg.text.slice(0, i));
+      i += 5; // Reveal chunk
+      if (i > msg.text.length) {
+        clearInterval(interval);
+        setDisplayedText(msg.text);
+      }
+    }, 20);
+    return () => clearInterval(interval);
+  }, [msg.text, isNewAI]);
 
   // Render newlines and bullet points from AI response
   const renderText = (text) =>
@@ -62,11 +77,18 @@ function MessageBubble({ msg }) {
       <div
         className={`px-4 py-3 rounded-2xl text-sm leading-relaxed
           ${isUser
-            ? 'bg-cardDark border border-white/10 text-textLight'
-            : 'bg-primary/10 border border-primary/20 text-textLight'
+            ? 'glass-panel bg-cardDark/50 border border-white/10 text-textLight'
+            : 'glass-panel bg-primary/10 border border-primary/30 text-textLight shadow-[0_4px_20px_rgba(37,99,235,0.1)]'
           }`}
       >
-        {renderText(msg.text)}
+        {renderText(displayedText)}
+        {isNewAI && displayedText.length < msg.text.length && (
+          <motion.span
+            animate={{ opacity: [1, 0] }}
+            transition={{ repeat: Infinity, duration: 0.5 }}
+            className="inline-block w-2 h-3 bg-primary ml-1 align-middle"
+          />
+        )}
         <p className="text-[10px] text-textLight/30 mt-2 text-right">
           {msg.time}
         </p>
@@ -84,12 +106,16 @@ function TypingIndicator() {
       exit={{ opacity: 0, y: 8 }}
       className="flex gap-3 max-w-[85%]"
     >
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-blue-500 text-white flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(37,99,235,0.4)]">
+      <motion.div 
+        animate={{ scale: [1, 1.1, 1], boxShadow: ["0 0 12px rgba(37,99,235,0.4)", "0 0 24px rgba(37,99,235,0.8)", "0 0 12px rgba(37,99,235,0.4)"] }}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+        className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-blue-500 text-white flex items-center justify-center shrink-0"
+      >
         <Sparkles size={15} />
-      </div>
-      <div className="px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20 flex items-center gap-2">
+      </motion.div>
+      <div className="px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20 flex items-center gap-2 glass-panel shadow-[0_4px_15px_rgba(37,99,235,0.15)]">
         <Loader2 size={15} className="animate-spin text-primary" />
-        <span className="text-sm text-textLight/60">Analysing your data...</span>
+        <span className="text-sm font-mono text-primary/80 animate-pulse">Neural engine reasoning...</span>
       </div>
     </motion.div>
   );
@@ -161,7 +187,7 @@ const AIAssistant = () => {
       const aiText = res?.data?.message?.response ?? 'I could not generate a response. Please try again.';
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: 'ai', text: aiText, time: fmtTime(new Date()) },
+        { id: Date.now() + 1, sender: 'ai', text: aiText, time: fmtTime(new Date()), isNew: true },
       ]);
     } catch (err) {
       setError('Failed to reach AI. Please check your connection and try again.');
@@ -226,8 +252,8 @@ const AIAssistant = () => {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 hide-scrollbar">
           <AnimatePresence initial={false}>
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} msg={msg} />
+            {messages.map((msg, index) => (
+              <MessageBubble key={msg.id} msg={msg} isNewAI={msg.sender === 'ai' && msg.isNew} />
             ))}
           </AnimatePresence>
 
@@ -264,10 +290,10 @@ const AIAssistant = () => {
                 key={i}
                 onClick={() => sendMessage(p.text)}
                 disabled={isTyping}
-                className="flex items-center gap-1.5 text-xs bg-white/5 hover:bg-primary/10 hover:border-primary/30 border border-white/10 rounded-full px-3 py-1.5 text-textLight/60 hover:text-textLight transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 text-xs bg-black/40 hover:bg-primary/20 hover:border-primary/50 border border-primary/20 shadow-[0_0_10px_rgba(37,99,235,0.1)] hover:shadow-[0_0_15px_rgba(37,99,235,0.4)] rounded-full px-4 py-2 text-primary hover:text-blue-300 transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-md"
               >
-                <p.icon size={11} className="text-primary" />
-                {p.label}
+                <p.icon size={12} className="text-primary animate-pulse" />
+                <span className="font-semibold tracking-wide">{p.label}</span>
               </button>
             ))}
           </div>

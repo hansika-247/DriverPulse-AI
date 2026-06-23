@@ -12,10 +12,12 @@ import RouteAnalytics from './Pages/RouteAnalytics';
 import AIInsights from './Pages/AIInsights';
 import Leaderboard from './Pages/Leaderboard';
 import AIAssistant from './Pages/AIAssistant';
+import FeedbackLearning from './Pages/FeedbackLearning';
 import Settings from './Pages/Settings';
 import Login from './Pages/Login';
 import Signup from './Pages/Signup';
 import DriverAssessmentForm from './Pages/DriverAssessmentForm';
+import LandingPage from './Pages/LandingPage';
 import ProtectedRoute from './Components/ProtectedRoute';
 import PublicRoute from './Components/PublicRoute';
 
@@ -26,6 +28,13 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
+              {/* Public Landing Page */}
+              <Route path="/" element={
+                <PublicRoute>
+                  <LandingPage />
+                </PublicRoute>
+              } />
+
               {/* Public Auth Routes */}
               <Route path="/login" element={
                 <PublicRoute>
@@ -39,23 +48,23 @@ function App() {
               } />
 
               {/* Protected App Routes */}
-              <Route path="/" element={
+              <Route element={
                 <ProtectedRoute>
                   <AppLayout />
                 </ProtectedRoute>
               }>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard"   element={<Dashboard />} />
-                <Route path="profile"     element={<DriverProfile />} />
-                <Route path="trips"       element={<TripSummary />} />
-                <Route path="flags"       element={<FlaggedMoments />} />
-                <Route path="routes"      element={<RouteAnalytics />} />
-                <Route path="insights"    element={<AIInsights />} />
-                <Route path="leaderboard" element={<Leaderboard />} />
-                <Route path="assistant"   element={<AIAssistant />} />
-                <Route path="settings"    element={<Settings />} />
+                <Route path="/dashboard"   element={<Dashboard />} />
+                <Route path="/profile"     element={<DriverProfile />} />
+                <Route path="/trips"       element={<TripSummary />} />
+                <Route path="/flags"       element={<FlaggedMoments />} />
+                <Route path="/routes"      element={<RouteAnalytics />} />
+                <Route path="/insights"    element={<AIInsights />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/assistant"   element={<AIAssistant />} />
+                <Route path="/feedback"    element={<FeedbackLearning />} />
+                <Route path="/settings"    element={<Settings />} />
                 {/* Standalone assessment route — also embedded in Dashboard when needsAssessment */}
-                <Route path="assessment"  element={<DriverAssessmentForm standalone />} />
+                <Route path="/assessment"  element={<DriverAssessmentForm standalone />} />
               </Route>
             </Routes>
           </BrowserRouter>

@@ -106,14 +106,14 @@ const Settings = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 ${
                   isActive 
-                    ? 'bg-primary/10 text-primary font-medium border-l-4 border-primary' 
-                    : 'text-textLight/70 hover:bg-white/5 hover:text-textLight'
+                    ? 'glass-panel bg-primary/20 text-primary font-bold border-l-4 border-primary shadow-[0_4px_20px_rgba(37,99,235,0.2)]' 
+                    : 'text-textLight/70 hover:bg-white/5 hover:text-textLight hover:translate-x-1'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon size={18} />
+                  <item.icon size={18} className={isActive ? 'animate-pulse' : ''} />
                   {item.name}
                 </div>
                 {isActive && <ChevronRight size={16} />}
@@ -128,13 +128,13 @@ const Settings = () => {
             {activeTab === 'profile' && (
               <motion.div 
                 key="profile"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="glass rounded-2xl p-6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               >
-                <h2 className="text-xl font-semibold mb-6 border-b border-white/10 pb-4">Profile Settings</h2>
+                <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white tracking-wide">Profile Settings</h2>
                 
                 <form onSubmit={handleSave} className="space-y-6">
                   <div className="flex items-center gap-6">
@@ -212,13 +212,13 @@ const Settings = () => {
             {activeTab === 'appearance' && (
               <motion.div 
                 key="appearance"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="glass rounded-2xl p-6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               >
-                <h2 className="text-xl font-semibold mb-6 border-b border-white/10 pb-4">Appearance Settings</h2>
+                <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white tracking-wide">Appearance Settings</h2>
                 
                 <div className="space-y-6">
                   <div className="mb-6 pb-6 border-b border-white/10">
@@ -328,13 +328,13 @@ const Settings = () => {
             {activeTab === 'notifications' && (
               <motion.div 
                 key="notifications"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="glass rounded-2xl p-6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               >
-                <h2 className="text-xl font-semibold mb-6 border-b border-white/10 pb-4">Notifications Settings</h2>
+                <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white tracking-wide">Notifications Settings</h2>
                 <p className="text-sm text-textLight/70">Configure your alert and notice preferences. Features coming soon.</p>
               </motion.div>
             )}
@@ -342,13 +342,13 @@ const Settings = () => {
             {activeTab === 'security' && (
               <motion.div 
                 key="security"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="glass rounded-2xl p-6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               >
-                <h2 className="text-xl font-semibold mb-6 border-b border-white/10 pb-4">Security Settings</h2>
+                <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white tracking-wide">Security Settings</h2>
                 <p className="text-sm text-textLight/70">Manage your passwords, active sessions, and access keys. Features coming soon.</p>
               </motion.div>
             )}

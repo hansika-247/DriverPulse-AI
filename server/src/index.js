@@ -79,8 +79,32 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ── Port availability check ───────────────────────────────────
+import net from 'net';
+
+const isPortInUse = (port) =>
+  new Promise((resolve) => {
+    const tester = net.createServer()
+      .once('error', () => resolve(true))   // port is occupied
+      .once('listening', () => {
+        tester.close();
+        resolve(false);                      // port is free
+      })
+      .listen(port, '0.0.0.0');
+  });
+
 // ── Start Server ─────────────────────────────────────────────
 const start = async () => {
+  // Pre-flight: check if port is already occupied before connecting DB
+  const occupied = await isPortInUse(PORT);
+  if (occupied) {
+    console.error(`\n⚠️  Port ${PORT} already in use. Existing DriverPulse server detected.`);
+    console.error(`   Run:  netstat -ano | findstr :${PORT}`);
+    console.error(`   Then: Stop-Process -Id <PID> -Force`);
+    console.error(`   Then restart this server.\n`);
+    process.exit(1);
+  }
+
   try {
     // Verify database connection
     await prisma.$connect();

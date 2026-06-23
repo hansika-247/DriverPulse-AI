@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Shield,
   Trophy,
+  Activity,
 } from 'lucide-react';
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
   { name: 'AI Insights',     path: '/insights',   icon: BrainCircuit },
   { name: 'Leaderboard',     path: '/leaderboard',icon: Trophy },
   { name: 'AI Assistant',    path: '/assistant',  icon: MessageSquare },
+  { name: 'Feedback Learning',path: '/feedback',  icon: Activity },
   { name: 'Settings',        path: '/settings',   icon: Settings },
 ];
 

@@ -56,6 +56,7 @@ async function retrieveTrips(driverUuid) {
         flags: { select: { flagType: true, severity: true } },
       },
     });
+    console.log(`[context.service] retrieveTrips(${driverUuid}) → ${trips.length} trips found`);
     return trips.map((t) => ({
       id:          t.id,
       startTime:   t.startTime,
@@ -63,11 +64,13 @@ async function retrieveTrips(driverUuid) {
       distance:    t.distance,
       earnings:    t.earnings,
       avgSpeed:    t.avgSpeed,
+      route:       t.route,
       status:      t.status,
       flagCount:   t.flags.length,
       flagTypes:   [...new Set(t.flags.map((f) => f.flagType))],
     }));
-  } catch {
+  } catch (err) {
+    console.error(`[context.service] retrieveTrips ERROR: ${err.message}`);
     return [];
   }
 }
@@ -79,12 +82,14 @@ async function retrieveFlags(driverUuid) {
       where:   { driverId: driverUuid },
       orderBy: { timestamp: 'desc' },
       take:    20,
-      select:  { flagType: true, severity: true, timestamp: true, motionScore: true, audioScore: true },
+      select:  { id: true, flagType: true, severity: true, timestamp: true, motionScore: true, audioScore: true, incidentFeedback: true },
     });
     const counts = {};
     for (const f of flags) counts[f.flagType] = (counts[f.flagType] || 0) + 1;
+    console.log(`[context.service] retrieveFlags(${driverUuid}) → ${flags.length} flags found, summary: ${JSON.stringify(counts)}`);
     return { recentFlags: flags, summary: counts };
-  } catch {
+  } catch (err) {
+    console.error(`[context.service] retrieveFlags ERROR: ${err.message}`);
     return { recentFlags: [], summary: {} };
   }
 }
@@ -106,10 +111,25 @@ async function retrieveProfile(driverUuid) {
   try {
     return await prisma.driver.findUnique({
       where:  { id: driverUuid },
-      select: { name: true, driverId: true, vehicleType: true, city: true, createdAt: true },
+      select: { name: true, driverId: true, vehicleType: true, createdAt: true },
     });
   } catch {
     return null;
+  }
+}
+
+/** Retriever 7: Incident Feedback */
+async function retrieveFeedback(driverUuid) {
+  try {
+    const feedback = await prisma.incidentFeedback.findMany({
+      where: { driverId: driverUuid },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: { flagId: true, tripId: true, feedbackType: true, createdAt: true }
+    });
+    return feedback;
+  } catch {
+    return [];
   }
 }
 
@@ -122,14 +142,26 @@ async function retrieveProfile(driverUuid) {
 //   3. formatContextForPrompt() becomes the prompt template
 // ─────────────────────────────────────────────────────────────
 export async function assembleContext(driverUuid, mlDriverId) {
-  const [prediction, insights, trips, flagData, assessment, profile] = await Promise.all([
+  console.log(`[context.service] assembleContext called — UUID=${driverUuid}, mlDriverId=${mlDriverId}`);
+
+  const [prediction, insights, trips, flagData, assessment, profile, feedback] = await Promise.all([
     retrievePrediction(mlDriverId),
     retrieveInsights(mlDriverId),
     retrieveTrips(driverUuid),
     retrieveFlags(driverUuid),
     retrieveAssessment(driverUuid),
     retrieveProfile(driverUuid),
+    retrieveFeedback(driverUuid),
   ]);
+
+  console.log(`[context.service] assembleContext COMPLETE:`);
+  console.log(`  profile    : ${JSON.stringify(profile)}`);
+  console.log(`  prediction : ${JSON.stringify(prediction)?.slice(0, 120)}`);
+  console.log(`  trips      : ${trips.length} rows`);
+  console.log(`  flags      : ${flagData.recentFlags?.length} rows, summary=${JSON.stringify(flagData.summary)}`);
+  console.log(`  insights   : ${insights.length} rows`);
+  console.log(`  assessment : ${assessment ? 'found' : 'null'}`);
+  console.log(`  feedback   : ${feedback.length} rows`);
 
   return {
     prediction,
@@ -138,6 +170,7 @@ export async function assembleContext(driverUuid, mlDriverId) {
     flagData,
     assessment,
     profile,
+    feedback,
     mlDriverId,
     retrievedAt: new Date().toISOString(),
   };

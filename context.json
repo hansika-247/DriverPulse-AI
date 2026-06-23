@@ -1,0 +1,277 @@
+{
+  "prediction": {},
+  "insights": [],
+  "trips": [
+    {
+      "id": "7ba622e5-174f-4af0-95d5-aa49800add3a",
+      "startTime": "2026-06-20T03:14:33.547Z",
+      "endTime": "2026-06-20T03:54:33.547Z",
+      "distance": 28,
+      "earnings": 322.43,
+      "avgSpeed": 42,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 2,
+      "flagTypes": [
+        "noise_event",
+        "harsh_braking"
+      ]
+    },
+    {
+      "id": "f81d7e2b-92c4-4200-bf40-10c184a11079",
+      "startTime": "2026-06-16T12:14:33.554Z",
+      "endTime": "2026-06-16T13:25:33.554Z",
+      "distance": 18,
+      "earnings": 277.18,
+      "avgSpeed": 15,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 3,
+      "flagTypes": [
+        "rapid_acceleration",
+        "noise_event",
+        "fatigue"
+      ]
+    },
+    {
+      "id": "33032253-e91b-488f-ac65-722eb304c266",
+      "startTime": "2026-06-07T08:14:33.557Z",
+      "endTime": "2026-06-07T09:25:33.557Z",
+      "distance": 33.7,
+      "earnings": 501.4,
+      "avgSpeed": 28,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 2,
+      "flagTypes": [
+        "distraction",
+        "harsh_braking"
+      ]
+    },
+    {
+      "id": "b994b306-ebc6-44cc-beb5-f0918c1f9257",
+      "startTime": "2026-06-06T09:14:33.550Z",
+      "endTime": "2026-06-06T10:06:33.550Z",
+      "distance": 7.3,
+      "earnings": 73.66,
+      "avgSpeed": 8,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 5,
+      "flagTypes": [
+        "distraction",
+        "noise_event",
+        "phone_usage",
+        "rapid_acceleration",
+        "fatigue"
+      ]
+    },
+    {
+      "id": "61d00dd1-ec32-4d15-9ae3-fe251da3e94c",
+      "startTime": "2026-05-26T17:14:33.517Z",
+      "endTime": "2026-05-26T17:36:33.517Z",
+      "distance": 21.6,
+      "earnings": 357.25,
+      "avgSpeed": 59,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 3,
+      "flagTypes": [
+        "harsh_braking",
+        "fatigue",
+        "distraction"
+      ]
+    },
+    {
+      "id": "075f655b-116b-4d98-a30e-030982417d69",
+      "startTime": "2026-05-24T21:14:33.552Z",
+      "endTime": "2026-05-24T21:38:33.552Z",
+      "distance": 43.9,
+      "earnings": 858.02,
+      "avgSpeed": 110,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 4,
+      "flagTypes": [
+        "harsh_braking",
+        "phone_usage",
+        "noise_event"
+      ]
+    },
+    {
+      "id": "681d3934-843f-423b-a5e5-9cbca0e0c893",
+      "startTime": "2026-05-24T15:14:33.544Z",
+      "endTime": "2026-05-24T16:17:33.544Z",
+      "distance": 10,
+      "earnings": 115.2,
+      "avgSpeed": 10,
+      "route": "Generated Route",
+      "status": "COMPLETED",
+      "flagCount": 5,
+      "flagTypes": [
+        "phone_usage",
+        "noise_event",
+        "distraction",
+        "fatigue",
+        "rapid_acceleration"
+      ]
+    }
+  ],
+  "flagData": {
+    "recentFlags": [
+      {
+        "flagType": "harsh_braking",
+        "severity": "LOW",
+        "timestamp": "2026-06-20T03:45:43.087Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "noise_event",
+        "severity": "LOW",
+        "timestamp": "2026-06-20T03:17:59.751Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "fatigue",
+        "severity": "LOW",
+        "timestamp": "2026-06-16T13:21:14.073Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "noise_event",
+        "severity": "HIGH",
+        "timestamp": "2026-06-16T12:40:13.472Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "rapid_acceleration",
+        "severity": "MEDIUM",
+        "timestamp": "2026-06-16T12:20:46.660Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "distraction",
+        "severity": "LOW",
+        "timestamp": "2026-06-07T08:56:00.324Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "harsh_braking",
+        "severity": "MEDIUM",
+        "timestamp": "2026-06-07T08:32:04.075Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "phone_usage",
+        "severity": "HIGH",
+        "timestamp": "2026-06-06T10:04:18.943Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "distraction",
+        "severity": "LOW",
+        "timestamp": "2026-06-06T10:01:40.048Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "rapid_acceleration",
+        "severity": "LOW",
+        "timestamp": "2026-06-06T09:52:33.118Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "fatigue",
+        "severity": "MEDIUM",
+        "timestamp": "2026-06-06T09:44:51.124Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "noise_event",
+        "severity": "HIGH",
+        "timestamp": "2026-06-06T09:42:42.165Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "harsh_braking",
+        "severity": "LOW",
+        "timestamp": "2026-05-26T17:32:50.493Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "fatigue",
+        "severity": "MEDIUM",
+        "timestamp": "2026-05-26T17:28:49.478Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "distraction",
+        "severity": "LOW",
+        "timestamp": "2026-05-26T17:25:16.194Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "phone_usage",
+        "severity": "MEDIUM",
+        "timestamp": "2026-05-24T21:24:02.501Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "noise_event",
+        "severity": "HIGH",
+        "timestamp": "2026-05-24T21:19:36.593Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "phone_usage",
+        "severity": "MEDIUM",
+        "timestamp": "2026-05-24T21:18:28.234Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "harsh_braking",
+        "severity": "LOW",
+        "timestamp": "2026-05-24T21:15:49.776Z",
+        "motionScore": null,
+        "audioScore": null
+      },
+      {
+        "flagType": "rapid_acceleration",
+        "severity": "MEDIUM",
+        "timestamp": "2026-05-24T16:10:34.953Z",
+        "motionScore": null,
+        "audioScore": null
+      }
+    ],
+    "summary": {
+      "harsh_braking": 4,
+      "noise_event": 4,
+      "fatigue": 3,
+      "rapid_acceleration": 3,
+      "distraction": 3,
+      "phone_usage": 3
+    }
+  },
+  "assessment": null,
+  "profile": null,
+  "feedback": [],
+  "mlDriverId": "DRV0001",
+  "retrievedAt": "2026-06-23T13:05:13.349Z"
+}

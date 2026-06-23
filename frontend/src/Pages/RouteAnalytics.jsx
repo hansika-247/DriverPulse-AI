@@ -26,8 +26,17 @@ const createCustomIcon = (color, isActive = false) => {
       height: ${isActive ? 24 : 16}px; 
       border-radius: 50%; 
       border: ${isActive ? 4 : 2}px solid white; 
-      box-shadow: 0 0 ${isActive ? 12 : 4}px ${color}; 
-      transition: all 0.2s ease;"></div>`,
+      box-shadow: 0 0 ${isActive ? 20 : 10}px ${color}, inset 0 0 ${isActive ? 10 : 5}px white; 
+      animation: ${isActive ? 'pulse-glow 1.5s infinite' : 'none'};
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    "></div>
+    <style>
+      @keyframes pulse-glow {
+        0% { box-shadow: 0 0 10px ${color}, 0 0 0 0 rgba(${color}, 0.7); }
+        70% { box-shadow: 0 0 20px ${color}, 0 0 0 15px rgba(255, 255, 255, 0); }
+        100% { box-shadow: 0 0 10px ${color}, 0 0 0 0 rgba(255, 255, 255, 0); }
+      }
+    </style>`,
     iconSize: isActive ? [24, 24] : [16, 16],
     iconAnchor: isActive ? [12, 12] : [8, 8],
     popupAnchor: [0, isActive ? -12 : -8],
@@ -47,14 +56,32 @@ const createEndpointIcon = (color) => {
 const createVehicleIcon = (rotation) => L.divIcon({
   className: 'vehicle-marker',
   html: `
-    <div style="transform: rotate(${rotation}deg); transform-origin: center; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); transition: transform 0.1s linear;">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="#3B82F6" stroke="white" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+    <div style="
+      transform: rotate(${rotation}deg); 
+      transform-origin: center; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 40px; 
+      height: 40px; 
+      filter: drop-shadow(0 0 15px #00f0ff);
+      transition: transform 0.1s linear;
+    ">
+      <div style="
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0,240,255,0.4) 0%, transparent 70%);
+        z-index: -1;
+      "></div>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="#00f0ff" stroke="white" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
         <polygon points="12,2 22,20 12,17 2,20" />
       </svg>
     </div>
   `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconSize: [40, 40],
+  iconAnchor: [20, 20]
 });
 
 const startIcon = createEndpointIcon('#10B981'); // Green
@@ -412,9 +439,9 @@ const RouteAnalytics = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-1 glass rounded-2xl p-5 flex flex-col overflow-y-auto custom-scrollbar"
+          className="lg:col-span-1 glass-panel rounded-2xl p-5 flex flex-col overflow-y-auto custom-scrollbar border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
         >
-          <h3 className="text-lg font-semibold mb-4">Trip Details</h3>
+          <h3 className="text-lg font-bold tracking-tight mb-4 text-white">Trip Details</h3>
           
           <div className="space-y-4 mb-6">
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
@@ -698,15 +725,24 @@ const RouteAnalytics = () => {
               <MapEffect positions={positions} />
               <MapController activeFlagId={activeFlagId} flags={flags} />
               
-              {/* Render Segmented Heatmap Overlay */}
+              {/* Render Segmented Heatmap Overlay with Glow Effect */}
               {routeSegments.segments.map(seg => (
-                <Polyline 
-                  key={seg.id}
-                  positions={seg.positions} 
-                  color={seg.color} 
-                  weight={5} 
-                  opacity={0.8} 
-                />
+                <React.Fragment key={seg.id}>
+                  {/* Outer Glow */}
+                  <Polyline 
+                    positions={seg.positions} 
+                    color={seg.color} 
+                    weight={15} 
+                    opacity={0.15} 
+                  />
+                  {/* Inner Line */}
+                  <Polyline 
+                    positions={seg.positions} 
+                    color={seg.color} 
+                    weight={4} 
+                    opacity={1} 
+                  />
+                </React.Fragment>
               ))}
               
               {/* Endpoint Markers */}

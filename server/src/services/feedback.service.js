@@ -41,41 +41,86 @@ export const upsertFeedback = async (driverId, data) => {
  * Gets global (or driver-specific) stats for model validation
  */
 export const getFeedbackStats = async (driverId = null) => {
-  const whereClause = driverId ? { driverId } : {};
+  try {
+    const whereClause = driverId ? { driverId } : {};
 
-  const total = await prisma.incidentFeedback.count({ where: whereClause });
-  if (total === 0) {
-    return {
+    const total = await prisma.incidentFeedback.count({ where: whereClause });
+    if (total === 0) {
+      return {
+        correct: 0,
+        incorrect: 0,
+        notRelevant: 0,
+        total: 0,
+        retrievalAccuracy: 0,
+        topCorrectedEvents: []
+      };
+    }
+
+    const group = await prisma.incidentFeedback.groupBy({
+      by: ['feedbackType'],
+      where: whereClause,
+      _count: {
+        _all: true
+      }
+    });
+
+    const stats = {
       correct: 0,
       incorrect: 0,
       notRelevant: 0,
-      total: 0
+      total,
+      retrievalAccuracy: 0,
+      topCorrectedEvents: []
     };
-  }
 
-  const group = await prisma.incidentFeedback.groupBy({
-    by: ['feedbackType'],
-    where: whereClause,
-    _count: {
-      _all: true
+    let correctCount = 0;
+    let incorrectCount = 0;
+
+    group.forEach(g => {
+      const percentage = Math.round((g._count._all / total) * 100);
+      if (g.feedbackType === 'CORRECT') {
+        stats.correct = percentage;
+        correctCount = g._count._all;
+      }
+      else if (g.feedbackType === 'INCORRECT') {
+        stats.incorrect = percentage;
+        incorrectCount = g._count._all;
+      }
+      else if (g.feedbackType === 'NOT_RELEVANT') stats.notRelevant = percentage;
+    });
+
+    if (correctCount + incorrectCount > 0) {
+      stats.retrievalAccuracy = Math.round((correctCount / (correctCount + incorrectCount)) * 100);
     }
-  });
+    
+    const topFlagsQuery = await prisma.incidentFeedback.findMany({
+      where: whereClause,
+      select: {
+        flag: {
+          select: {
+            flagType: true
+          }
+        }
+      }
+    });
+    
+    const flagCounts = {};
+    topFlagsQuery.forEach(fb => {
+      if (fb.flag && fb.flag.flagType) {
+        flagCounts[fb.flag.flagType] = (flagCounts[fb.flag.flagType] || 0) + 1;
+      }
+    });
+    
+    stats.topCorrectedEvents = Object.entries(flagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(entry => ({ type: entry[0], count: entry[1] }));
 
-  const stats = {
-    correct: 0,
-    incorrect: 0,
-    notRelevant: 0,
-    total
-  };
-
-  group.forEach(g => {
-    const percentage = Math.round((g._count._all / total) * 100);
-    if (g.feedbackType === 'CORRECT') stats.correct = percentage;
-    else if (g.feedbackType === 'INCORRECT') stats.incorrect = percentage;
-    else if (g.feedbackType === 'NOT_RELEVANT') stats.notRelevant = percentage;
-  });
-
-  return stats;
+    return stats;
+  } catch (error) {
+    console.error('Error fetching feedback stats:', error);
+    throw error;
+  }
 };
 
 /**
